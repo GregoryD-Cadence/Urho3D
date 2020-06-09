@@ -633,6 +633,16 @@ Vector4 Camera::GetClipPlaneAttr() const
     return clipPlane_.ToVector4();
 }
 
+void Camera::setReversedDepth(bool reverse)
+{
+	reversedDepth_ = reverse;
+}
+
+bool Camera::isReversedDepth(void)
+{
+	return reversedDepth_;
+}
+
 void Camera::OnNodeSet(Node* node)
 {
     if (node)
@@ -650,6 +660,11 @@ void Camera::UpdateProjection() const
     // Start from a zero matrix in case it was custom previously
     projection_ = Matrix4::ZERO;
 
+	Matrix4 depthReverse = Matrix4(1.0f, 0.0f, 0.0f, 0.0f,
+								   0.0f, 1.0f, 0.0f, 0.0f,
+								   0.0f, 0.0f, -1.0f, 1.0f,
+								   0.0f, 0.0f, 0.0f, 1.0f);
+
     if (!orthographic_)
     {
         float h = (1.0f / tanf(fov_ * M_DEGTORAD * 0.5f)) * zoom_;
@@ -664,8 +679,19 @@ void Camera::UpdateProjection() const
         projection_.m22_ = q;
         projection_.m23_ = r;
         projection_.m32_ = 1.0f;
-        projNearClip_ = nearClip_;
-        projFarClip_ = farClip_;
+
+		if (reversedDepth_)
+		{
+			projection_ = depthReverse * projection_;
+			Matrix4 inverseProjection = projection_.Inverse();
+			projNearClip_ = (inverseProjection * Vector3(0.0f, 0.0f, 1.0f)).z_;
+			projFarClip_ = (inverseProjection * Vector3(0.0f, 0.0f, 0.0f)).z_;
+		}
+		else
+		{
+			projNearClip_ = nearClip_;
+			projFarClip_ = farClip_;
+		}
     }
     else
     {

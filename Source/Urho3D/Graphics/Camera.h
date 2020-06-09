@@ -216,6 +216,12 @@ public:
     /// Return clipping plane attribute.
     Vector4 GetClipPlaneAttr() const;
 
+	// Toggles reversed depth buffer
+	void setReversedDepth(bool reverse);
+	// Returns true iff the depth buffer is reversed
+	bool isReversedDepth(void);
+
+
 protected:
     /// Handle node being assigned.
     void OnNodeSet(Node* node) override;
@@ -282,6 +288,9 @@ private:
     bool useClipping_;
     /// Use custom projection matrix flag. Used internally.
     mutable bool customProjection_;
+	
+	// Tracks direction of depth buffer
+	bool reversedDepth_{};
 };
 
 }

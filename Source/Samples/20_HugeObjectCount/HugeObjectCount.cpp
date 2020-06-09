@@ -60,7 +60,7 @@ void HugeObjectCount::Start()
     CreateScene();
 
     // Create the UI content
-    CreateInstructions();
+    // CreateInstructions();
 
     // Setup the viewport for displaying the scene
     SetupViewport();
@@ -74,91 +74,59 @@ void HugeObjectCount::Start()
 
 void HugeObjectCount::CreateScene()
 {
-    auto* cache = GetSubsystem<ResourceCache>();
+	auto* cache = GetSubsystem<ResourceCache>();
 
-    if (!scene_)
-        scene_ = new Scene(context_);
-    else
-    {
-        scene_->Clear();
-        boxNodes_.Clear();
-    }
+	scene_ = new Scene(context_);
 
-    // Create the Octree component to the scene so that drawable objects can be rendered. Use default volume
-    // (-1000, -1000, -1000) to (1000, 1000, 1000)
-    scene_->CreateComponent<Octree>();
+	// Create the Octree component to the scene. This is required before adding any drawable components, or else nothing will
+	// show up. The default octree volume will be from (-1000, -1000, -1000) to (1000, 1000, 1000) in world coordinates; it
+	// is also legal to place objects outside the volume but their visibility can then not be checked in a hierarchically
+	// optimizing manner
+	scene_->CreateComponent<Octree>();
 
-    // Create a Zone for ambient light & fog control
-    Node* zoneNode = scene_->CreateChild("Zone");
-    auto* zone = zoneNode->CreateComponent<Zone>();
-    zone->SetBoundingBox(BoundingBox(-1000.0f, 1000.0f));
-    zone->SetFogColor(Color(0.2f, 0.2f, 0.2f));
-    zone->SetFogStart(200.0f);
-    zone->SetFogEnd(300.0f);
+	// Create a child scene node (at world origin) and a StaticModel component into it. Set the StaticModel to show a simple
+	// plane mesh with a "stone" material. Note that naming the scene nodes is optional. Scale the scene node larger
+	// (100 x 100 world units)
+	Node* planeNode = scene_->CreateChild("Plane");
+	planeNode->SetScale(Vector3(100.0f, 1.0f, 100.0f));
+	auto* planeObject = planeNode->CreateComponent<StaticModel>();
+	planeObject->SetModel(cache->GetResource<Model>("Models/Plane.mdl"));
+	planeObject->SetMaterial(cache->GetResource<Material>("Materials/StoneTiled.xml"));
 
-    // Create a directional light
-    Node* lightNode = scene_->CreateChild("DirectionalLight");
-    lightNode->SetDirection(Vector3(-0.6f, -1.0f, -0.8f)); // The direction vector does not need to be normalized
-    auto* light = lightNode->CreateComponent<Light>();
-    light->SetLightType(LIGHT_DIRECTIONAL);
+	// Create a directional light to the world so that we can see something. The light scene node's orientation controls the
+	// light direction; we will use the SetDirection() function which calculates the orientation from a forward direction vector.
+	// The light will use default settings (white light, no shadows)
+	Node* lightNode = scene_->CreateChild("DirectionalLight");
+	lightNode->SetDirection(Vector3(0.6f, -1.0f, 0.8f)); // The direction vector does not need to be normalized
+	auto* light = lightNode->CreateComponent<Light>();
+	light->SetLightType(LIGHT_DIRECTIONAL);
 
-    if (!useGroups_)
-    {
-        light->SetColor(Color(0.7f, 0.35f, 0.0f));
+	// Create more StaticModel objects to the scene, randomly positioned, rotated and scaled. For rotation, we construct a
+	// quaternion from Euler angles where the Y angle (rotation about the Y axis) is randomized. The mushroom model contains
+	// LOD levels, so the StaticModel component will automatically select the LOD level according to the view distance (you'll
+	// see the model get simpler as it moves further away). Finally, rendering a large number of the same object with the
+	// same material allows instancing to be used, if the GPU supports it. This reduces the amount of CPU work in rendering the
+	// scene.
+	const unsigned NUM_OBJECTS = 200;
+	for (unsigned i = 0; i < NUM_OBJECTS; ++i)
+	{
+		Node* mushroomNode = scene_->CreateChild("Mushroom");
+		mushroomNode->SetPosition(Vector3(Random(90.0f) - 45.0f, 0.0f, Random(90.0f) - 45.0f));
+		mushroomNode->SetRotation(Quaternion(0.0f, Random(360.0f), 0.0f));
+		mushroomNode->SetScale(0.5f + Random(2.0f));
+		auto* mushroomObject = mushroomNode->CreateComponent<StaticModel>();
+		mushroomObject->SetModel(cache->GetResource<Model>("Models/Mushroom.mdl"));
+		mushroomObject->SetMaterial(cache->GetResource<Material>("Materials/Mushroom.xml"));
+	}
 
-        // Create individual box StaticModels in the scene
-        for (int y = -125; y < 125; ++y)
-        {
-            for (int x = -125; x < 125; ++x)
-            {
-                Node* boxNode = scene_->CreateChild("Box");
-                boxNode->SetPosition(Vector3(x * 0.3f, 0.0f, y * 0.3f));
-                boxNode->SetScale(0.25f);
-                auto* boxObject = boxNode->CreateComponent<StaticModel>();
-                boxObject->SetModel(cache->GetResource<Model>("Models/Box.mdl"));
-                boxNodes_.Push(SharedPtr<Node>(boxNode));
-            }
-        }
-    }
-    else
-    {
-        light->SetColor(Color(0.6f, 0.6f, 0.6f));
-        light->SetSpecularIntensity(1.5f);
+	// Create a scene node for the camera, which we will move around
+	// The camera will use default settings (1000 far clip distance, 45 degrees FOV, set aspect ratio automatically)
+	cameraNode_ = scene_->CreateChild("Camera");
+	cameraNode_->CreateComponent<Camera>();
+	cameraNode_->GetComponent<Camera>()->setReversedDepth(true);
 
-        // Create StaticModelGroups in the scene
-        StaticModelGroup* lastGroup = nullptr;
-
-        for (int y = -125; y < 125; ++y)
-        {
-            for (int x = -125; x < 125; ++x)
-            {
-                // Create new group if no group yet, or the group has already "enough" objects. The tradeoff is between culling
-                // accuracy and the amount of CPU processing needed for all the objects. Note that the group's own transform
-                // does not matter, and it does not render anything if instance nodes are not added to it
-                if (!lastGroup || lastGroup->GetNumInstanceNodes() >= 25 * 25)
-                {
-                    Node* boxGroupNode = scene_->CreateChild("BoxGroup");
-                    lastGroup = boxGroupNode->CreateComponent<StaticModelGroup>();
-                    lastGroup->SetModel(cache->GetResource<Model>("Models/Box.mdl"));
-                }
-
-                Node* boxNode = scene_->CreateChild("Box");
-                boxNode->SetPosition(Vector3(x * 0.3f, 0.0f, y * 0.3f));
-                boxNode->SetScale(0.25f);
-                boxNodes_.Push(SharedPtr<Node>(boxNode));
-                lastGroup->AddInstanceNode(boxNode);
-            }
-        }
-    }
-
-    // Create the camera. Create it outside the scene so that we can clear the whole scene without affecting it
-    if (!cameraNode_)
-    {
-        cameraNode_ = new Node(context_);
-        cameraNode_->SetPosition(Vector3(0.0f, 10.0f, -100.0f));
-        auto* camera = cameraNode_->CreateComponent<Camera>();
-        camera->SetFarClip(300.0f);
-    }
+	// Set an initial position for the camera scene node above the plane
+	cameraNode_->SetPosition(Vector3(0.0f, 5.0f, 0.0f));
 }
 
 void HugeObjectCount::CreateInstructions()

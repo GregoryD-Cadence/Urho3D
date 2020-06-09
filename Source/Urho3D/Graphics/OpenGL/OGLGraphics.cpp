@@ -1824,7 +1824,12 @@ void Graphics::SetDepthBias(float constantBias, float slopeScaledBias)
 
 void Graphics::SetDepthTest(CompareMode mode)
 {
-    if (mode != depthTestMode_)
+	if (reversedDepth_)
+	{
+		glDepthFunc(GL_GEQUAL);
+		depthTestMode_ = CMP_GREATEREQUAL;
+	}
+	else if (mode != depthTestMode_)
     {
         glDepthFunc(glCmpFunc[mode]);
         depthTestMode_ = mode;
@@ -2726,6 +2731,24 @@ unsigned Graphics::GetFormat(const String& formatName)
         return GetReadableDepthFormat();
 
     return GetRGBFormat();
+}
+
+void Graphics::setReverseDepthBuffer(bool reverse)
+{
+	if (reverse)
+	{
+		SetDepthTest(CMP_GREATEREQUAL);
+	}
+	else
+	{
+		SetDepthTest(CMP_LESSEQUAL);
+	}
+	reversedDepth_ = reverse;
+}
+
+bool Graphics::isReversedDepthBuffer(void)
+{
+	return reversedDepth_;
 }
 
 void Graphics::CheckFeatureSupport()

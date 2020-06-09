@@ -601,6 +601,11 @@ public:
     /// Bind a UBO, avoiding redundant operation. Used only on OpenGL.
     void SetUBO(unsigned object);
 
+	// Toggles reversed depth buffer
+	void setReverseDepthBuffer(bool reverse);
+	// Returns true iff the depth buffer is reversed
+	bool isReversedDepthBuffer(void);
+
     /// Return the API-specific alpha texture format.
     static unsigned GetAlphaFormat();
     /// Return the API-specific luminance texture format.
@@ -861,6 +866,9 @@ private:
     String orientations_;
     /// Graphics API name.
     String apiName_;
+
+	// Depth buffer direction
+	bool reversedDepth_{};
 
     /// Pixel perfect UV offset.
     static const Vector2 pixelUVOffset;
