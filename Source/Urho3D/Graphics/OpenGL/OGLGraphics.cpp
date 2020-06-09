@@ -1691,6 +1691,9 @@ void Graphics::SetDepthStencil(RenderSurface* depthStencil)
         {
             unsigned searchKey = (width << 16u) | height;
             HashMap<unsigned, SharedPtr<Texture2D> >::Iterator i = impl_->depthTextures_.Find(searchKey);
+
+			// make sure here that the format is the default depth stencil format, not just the same dimensions
+			// otherwise create a high precision depth buffer.
             if (i != impl_->depthTextures_.End() && i->second_->GetFormat() == Graphics::GetDefaultDepthStencilFormat())
                 depthStencil = i->second_->GetRenderSurface();
             else
@@ -2694,6 +2697,24 @@ unsigned Graphics::GetReadableDepthFormat()
 #endif
 }
 
+unsigned Graphics::GetReadableLowPrecisionDepthFormat()
+{
+#ifndef GL_ES_VERSION_2_0
+	return GL_DEPTH_COMPONENT24;
+#else
+	return glesReadableDepthFormat;
+#endif
+}
+
+unsigned Graphics::GetReadableHighPrecisionDepthFormat()
+{
+#ifndef GL_ES_VERSION_2_0
+	return GL_DEPTH_COMPONENT32;
+#else
+	return glesReadableDepthFormat;
+#endif
+}
+
 unsigned Graphics::GetLowPrecisionDepthStencilFormat()
 {
 #ifndef GL_ES_VERSION_2_0
@@ -2747,7 +2768,7 @@ unsigned Graphics::GetFormat(const String& formatName)
     if (nameLower == "d24s8")
         return GetLowPrecisionDepthStencilFormat();
     if (nameLower == "readabledepth" || nameLower == "hwdepth")
-        return GetReadableDepthFormat();
+        return GetReadableLowPrecisionDepthFormat();
 	if (nameLower == "d32s8" || nameLower == "highPrecisionDepth")
 		return GetHighPrecisionDepthStencilFormat();
 
@@ -3074,7 +3095,7 @@ void Graphics::PrepareDraw()
             // Bind either a renderbuffer or a depth texture, depending on what is available
             Texture* texture = depthStencil_->GetParentTexture();
 #ifndef GL_ES_VERSION_2_0
-            bool hasStencil = texture->GetFormat() == GL_DEPTH24_STENCIL8_EXT;
+            bool hasStencil = Graphics::isValidDepthStencilFormat(texture->GetFormat());
 #else
             bool hasStencil = texture->GetFormat() == GL_DEPTH24_STENCIL8_OES;
 #endif

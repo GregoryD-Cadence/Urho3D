@@ -429,7 +429,8 @@ public:
     bool GetHardwareShadowSupport() const { return hardwareShadowSupport_; }
 
     /// Return whether a readable hardware depth format is available.
-    bool GetReadableDepthSupport() const { return GetReadableDepthFormat() != 0; }
+    bool GetReadableDepthSupport() const { return (Graphics::GetLowPrecisionDepthStencilFormat() != 0) || 
+												  (Graphics::GetHighPrecisionDepthStencilFormat() != 0); }
 
     /// Return whether sRGB conversion on texture sampling is supported.
     bool GetSRGBSupport() const { return sRGBSupport_; }
@@ -638,18 +639,33 @@ public:
     static unsigned GetDepthStencilFormat();
     /// Return the API-specific readable hardware depth format, or 0 if not supported.
     static unsigned GetReadableDepthFormat();
+	
+	// Used only to check if there are supported hardware formats
+	/// Return the API-specific readable low precision depth 24 bit hardware depth format, or 0 if not supported.
+	static unsigned GetReadableLowPrecisionDepthFormat();
+	/// Return the API-specific readable high precision depth 32 bit hardware depth format, or 0 if not supported.
+	static unsigned GetReadableHighPrecisionDepthFormat();
+
     /// Return the API-specific texture format from a textual description, for example "rgb".
     static unsigned GetFormat(const String& formatName);
 
+	// Returns the default low precision depth stencil format (24 bit depth 8 bit stencil)
 	static unsigned GetLowPrecisionDepthStencilFormat();
+	// Returns the default high precision depth stencil format (32 bit depth 8 bit stencil)
 	static unsigned GetHighPrecisionDepthStencilFormat();
 
+	// Returns the default depth stencil format (32 bit)
 	static unsigned GetDefaultDepthStencilFormat();
+	// Returns the default readable depth format
 	static unsigned GetDefaultDepthFormat();
 
+	// Sets the default depth stencil format (should be called once when the graphics system is initialized)
+	// In almost all cases, should be set to 32 bit depth 8 bit stencil, unless unsupported.
 	static void SetDefaultDepthStencilFormat(unsigned format);
 
+	// Returns true iff the provided format is a supported readable depth format
 	static bool isValidDepthFormat(unsigned format);
+	// Returns true iff the provided format is a supportted depth stencil format
 	static bool isValidDepthStencilFormat(unsigned format);
 
     /// Return UV offset required for pixel perfect rendering.
@@ -881,6 +897,7 @@ private:
 	// Depth buffer direction
 	bool reversedDepth_{};
 
+	// Default depth stencil format for all graphics systems
 	static unsigned defaultDepthStencilFormat;
 
     /// Pixel perfect UV offset.
