@@ -1737,8 +1737,8 @@ void View::SetRenderTargets(RenderPathCommand& command)
             Texture* texture = FindNamedTexture(command.outputs_[index].first_, true, false);
 
             // Check for depth only rendering (by specifying a depth texture as the sole output)
-            if (!index && command.outputs_.Size() == 1 && texture && (texture->GetFormat() == Graphics::GetReadableDepthFormat() ||
-                                                                      texture->GetFormat() == Graphics::GetDepthStencilFormat()))
+            if (!index && command.outputs_.Size() == 1 && texture && (Graphics::isValidDepthFormat(texture->GetFormat()) ||
+                                                                      Graphics::isValidDepthStencilFormat(texture->GetFormat())))
             {
                 useColorWrite = false;
                 useCustomDepth = true;

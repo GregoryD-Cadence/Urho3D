@@ -290,6 +290,7 @@ static void GetGLPrimitiveType(unsigned elementCount, PrimitiveType type, unsign
 
 const Vector2 Graphics::pixelUVOffset(0.0f, 0.0f);
 bool Graphics::gl3Support = false;
+unsigned Graphics::defaultDepthStencilFormat = GL_DEPTH32F_STENCIL8;
 
 Graphics::Graphics(Context* context) :
     Object(context),
@@ -1690,12 +1691,12 @@ void Graphics::SetDepthStencil(RenderSurface* depthStencil)
         {
             unsigned searchKey = (width << 16u) | height;
             HashMap<unsigned, SharedPtr<Texture2D> >::Iterator i = impl_->depthTextures_.Find(searchKey);
-            if (i != impl_->depthTextures_.End())
+            if (i != impl_->depthTextures_.End() && i->second_->GetFormat() == Graphics::GetDefaultDepthStencilFormat())
                 depthStencil = i->second_->GetRenderSurface();
             else
             {
                 SharedPtr<Texture2D> newDepthTexture(new Texture2D(context_));
-                newDepthTexture->SetSize(width, height, GetDepthStencilFormat(), TEXTURE_DEPTHSTENCIL);
+                newDepthTexture->SetSize(width, height, GetDefaultDepthStencilFormat(), TEXTURE_DEPTHSTENCIL);
                 impl_->depthTextures_[searchKey] = newDepthTexture;
                 depthStencil = newDepthTexture->GetRenderSurface();
             }
@@ -2693,6 +2694,24 @@ unsigned Graphics::GetReadableDepthFormat()
 #endif
 }
 
+unsigned Graphics::GetLowPrecisionDepthStencilFormat()
+{
+#ifndef GL_ES_VERSION_2_0
+	return GL_DEPTH24_STENCIL8_EXT;
+#else
+	return glesDepthStencilFormat;
+#endif
+}
+
+unsigned Graphics::GetHighPrecisionDepthStencilFormat()
+{
+#ifndef GL_ES_VERSION_2_0
+	return GL_DEPTH32F_STENCIL8;
+#else
+	return glesDepthStencilFormat;
+#endif
+}
+
 unsigned Graphics::GetFormat(const String& formatName)
 {
     String nameLower = formatName.ToLower().Trimmed();
@@ -2726,11 +2745,50 @@ unsigned Graphics::GetFormat(const String& formatName)
     if (nameLower == "lineardepth" || nameLower == "depth")
         return GetLinearDepthFormat();
     if (nameLower == "d24s8")
-        return GetDepthStencilFormat();
+        return GetLowPrecisionDepthStencilFormat();
     if (nameLower == "readabledepth" || nameLower == "hwdepth")
         return GetReadableDepthFormat();
+	if (nameLower == "d32s8" || nameLower == "highPrecisionDepth")
+		return GetHighPrecisionDepthStencilFormat();
 
     return GetRGBFormat();
+}
+
+unsigned Graphics::GetDefaultDepthStencilFormat()
+{
+	return defaultDepthStencilFormat;
+}
+
+unsigned Graphics::GetDefaultDepthFormat()
+{
+	return GL_DEPTH_COMPONENT32;
+}
+
+void Graphics::SetDefaultDepthStencilFormat(unsigned format)
+{
+	defaultDepthStencilFormat = format;
+}
+
+bool Graphics::isValidDepthFormat(unsigned format)
+{
+	if (format == GL_DEPTH_COMPONENT24 || format == GL_DEPTH_COMPONENT32)
+	{
+		return true;
+	}
+	return false;
+}
+
+bool Graphics::isValidDepthStencilFormat(unsigned format)
+{
+	if (format == GL_DEPTH24_STENCIL8 || format == GL_DEPTH24_STENCIL8_EXT)
+	{
+		return true;
+	}
+	else if (format == GL_DEPTH32F_STENCIL8 || format == GL_DEPTH32F_STENCIL8_NV)
+	{
+		return true;
+	}
+	return false;
 }
 
 void Graphics::setReverseDepthBuffer(bool reverse)

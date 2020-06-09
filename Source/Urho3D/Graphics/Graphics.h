@@ -641,6 +641,17 @@ public:
     /// Return the API-specific texture format from a textual description, for example "rgb".
     static unsigned GetFormat(const String& formatName);
 
+	static unsigned GetLowPrecisionDepthStencilFormat();
+	static unsigned GetHighPrecisionDepthStencilFormat();
+
+	static unsigned GetDefaultDepthStencilFormat();
+	static unsigned GetDefaultDepthFormat();
+
+	static void SetDefaultDepthStencilFormat(unsigned format);
+
+	static bool isValidDepthFormat(unsigned format);
+	static bool isValidDepthStencilFormat(unsigned format);
+
     /// Return UV offset required for pixel perfect rendering.
     static const Vector2& GetPixelUVOffset() { return pixelUVOffset; }
 
@@ -869,6 +880,8 @@ private:
 
 	// Depth buffer direction
 	bool reversedDepth_{};
+
+	static unsigned defaultDepthStencilFormat;
 
     /// Pixel perfect UV offset.
     static const Vector2 pixelUVOffset;

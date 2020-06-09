@@ -996,7 +996,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
 Texture* Renderer::GetScreenBuffer(int width, int height, unsigned format, int multiSample, bool autoResolve, bool cubemap, bool filtered, bool srgb,
     unsigned persistentKey)
 {
-    bool depthStencil = (format == Graphics::GetDepthStencilFormat()) || (format == Graphics::GetReadableDepthFormat());
+    bool depthStencil = Graphics::isValidDepthStencilFormat(format) || Graphics::isValidDepthFormat(format);
     if (depthStencil)
     {
         filtered = false;
@@ -1095,7 +1095,7 @@ RenderSurface* Renderer::GetDepthStencil(int width, int height, int multiSample,
         return nullptr;
     else
     {
-        return static_cast<Texture2D*>(GetScreenBuffer(width, height, Graphics::GetDepthStencilFormat(), multiSample, autoResolve,
+        return static_cast<Texture2D*>(GetScreenBuffer(width, height, Graphics::GetDefaultDepthStencilFormat(), multiSample, autoResolve,
             false, false, false))->GetRenderSurface();
     }
 }
