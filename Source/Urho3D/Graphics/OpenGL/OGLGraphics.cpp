@@ -601,6 +601,19 @@ bool Graphics::BeginFrame()
 
     // Re-enable depth test and depth func in case a third party program has modified it
     glEnable(GL_DEPTH_TEST);
+	GLint major, minor;
+	glGetIntegerv(GL_MAJOR_VERSION, &major);
+	glGetIntegerv(GL_MINOR_VERSION, &minor);
+	if ((major > 4 || (major == 4 && minor >= 5)) ||
+		SDL_GL_ExtensionSupported("GL_ARB_clip_control"))
+	{
+		glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+	}
+	else
+	{
+		fprintf(stderr, "glClipControl required, sorry.\n");
+		exit(1);
+	}
     glDepthFunc(glCmpFunc[depthTestMode_]);
 
     // Set default rendertarget and depth buffer
@@ -3216,6 +3229,21 @@ void Graphics::ResetCachedState()
     if (impl_->context_)
     {
         glEnable(GL_DEPTH_TEST);
+
+		GLint major, minor;
+		glGetIntegerv(GL_MAJOR_VERSION, &major);
+		glGetIntegerv(GL_MINOR_VERSION, &minor);
+		if ((major > 4 || (major == 4 && minor >= 5)) ||
+			SDL_GL_ExtensionSupported("GL_ARB_clip_control"))
+		{
+			glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+		}
+		else
+		{
+			fprintf(stderr, "glClipControl required, sorry.\n");
+			exit(1);
+		}
+
         SetCullMode(CULL_CCW);
         SetDepthTest(CMP_LESSEQUAL);
         SetDepthWrite(true);
