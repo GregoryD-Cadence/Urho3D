@@ -291,6 +291,7 @@ static void GetGLPrimitiveType(unsigned elementCount, PrimitiveType type, unsign
 const Vector2 Graphics::pixelUVOffset(0.0f, 0.0f);
 bool Graphics::gl3Support = false;
 unsigned Graphics::defaultDepthStencilFormat = GL_DEPTH32F_STENCIL8;
+DepthMode Graphics::defaultDepthMode = DepthMode::REVERSE;
 
 Graphics::Graphics(Context* context) :
     Object(context),
@@ -1828,12 +1829,7 @@ void Graphics::SetDepthBias(float constantBias, float slopeScaledBias)
 
 void Graphics::SetDepthTest(CompareMode mode)
 {
-	if (reversedDepth_)
-	{
-		glDepthFunc(GL_GEQUAL);
-		depthTestMode_ = CMP_GREATEREQUAL;
-	}
-	else if (mode != depthTestMode_)
+	if (mode != depthTestMode_)
     {
         glDepthFunc(glCmpFunc[mode]);
         depthTestMode_ = mode;
@@ -2829,6 +2825,26 @@ bool Graphics::isReversedDepthBuffer(void)
 {
 	return reversedDepth_;
 }
+
+
+CompareMode Graphics::GetDefaultDepthTestMode()
+{
+	if (defaultDepthMode == DepthMode::REVERSE)
+	{
+		return CMP_GREATEREQUAL;
+	}
+	return CMP_LESSEQUAL;
+}
+
+CompareMode Graphics::GetFarDepthTestMode()
+{
+	if (defaultDepthMode == DepthMode::REVERSE)
+	{
+		return CMP_GREATEREQUAL;
+	}
+	return CMP_LESSEQUAL;
+}
+
 
 void Graphics::CheckFeatureSupport()
 {

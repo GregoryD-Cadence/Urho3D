@@ -76,7 +76,7 @@ static const char* lightingModeNames[] =
 Pass::Pass(const String& name) :
     blendMode_(BLEND_REPLACE),
     cullMode_(MAX_CULLMODES),
-    depthTestMode_(CMP_LESSEQUAL),
+    depthTestMode_(CMP_GREATEREQUAL),
     lightingMode_(LIGHTING_UNLIT),
     shadersLoadedFrameNumber_(0),
     alphaToCoverage_(false),

@@ -58,6 +58,11 @@ class Vector4;
 class VertexBuffer;
 class VertexDeclaration;
 
+enum class DepthMode {
+	FORWARD, 
+	REVERSE
+};
+
 struct ShaderParameter;
 
 /// CPU-side scratch buffer for vertex data updates.
@@ -636,7 +641,7 @@ public:
     /// Return the API-specific linear depth texture format.
     static unsigned GetLinearDepthFormat();
     /// Return the API-specific hardware depth-stencil texture format.
-    static unsigned GetDepthStencilFormat();
+    static unsigned GetDepthStencilFormat(); //DEPRECATED
     /// Return the API-specific readable hardware depth format, or 0 if not supported.
     static unsigned GetReadableDepthFormat();
 	
@@ -660,7 +665,7 @@ public:
 	static unsigned GetDefaultDepthFormat();
 
 	// Sets the default depth stencil format (should be called once when the graphics system is initialized)
-	// In almost all cases, should be set to 32 bit depth 8 bit stencil, unless unsupported.
+	// Realistically should not be called unless an external source wishes to alter the default depth stencil precision.
 	static void SetDefaultDepthStencilFormat(unsigned format);
 
 	// Returns true iff the provided format is a supported readable depth format
@@ -675,6 +680,14 @@ public:
     static unsigned GetMaxBones();
     /// Return whether is using an OpenGL 3 context. Return always false on Direct3D9 & Direct3D11.
     static bool GetGL3Support();
+
+	static CompareMode GetDefaultDepthTestMode();
+
+	static CompareMode GetFarDepthTestMode();
+
+	static CompareMode GetNearDepthTestMode();
+
+
 
 private:
     /// Create the application window.
@@ -899,6 +912,8 @@ private:
 
 	// Default depth stencil format for all graphics systems
 	static unsigned defaultDepthStencilFormat;
+
+	static DepthMode defaultDepthMode;
 
     /// Pixel perfect UV offset.
     static const Vector2 pixelUVOffset;

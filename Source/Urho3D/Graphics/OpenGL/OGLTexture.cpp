@@ -210,6 +210,9 @@ unsigned Texture::GetRowDataSize(int width) const
 #endif
         return (unsigned)(width * 4);
 
+	case GL_DEPTH32F_STENCIL8:
+		return (unsigned)(width * 8);
+
 #ifndef GL_ES_VERSION_2_0
     case GL_R8:
         return (unsigned)width;
@@ -256,10 +259,12 @@ unsigned Texture::GetRowDataSize(int width) const
 unsigned Texture::GetExternalFormat(unsigned format)
 {
 #ifndef GL_ES_VERSION_2_0
-    if (format == GL_DEPTH_COMPONENT16 || format == GL_DEPTH_COMPONENT24 || format == GL_DEPTH_COMPONENT32)
-        return GL_DEPTH_COMPONENT;
-    else if (format == GL_DEPTH24_STENCIL8_EXT)
-        return GL_DEPTH_STENCIL_EXT;
+	if (format == GL_DEPTH_COMPONENT16 || format == GL_DEPTH_COMPONENT24 || format == GL_DEPTH_COMPONENT32)
+		return GL_DEPTH_COMPONENT;
+	else if (format == GL_DEPTH24_STENCIL8_EXT)
+		return GL_DEPTH_STENCIL_EXT;
+	else if (format == GL_DEPTH32F_STENCIL8)
+		return GL_DEPTH_STENCIL_EXT;
     else if (format == GL_SLUMINANCE_EXT)
         return GL_LUMINANCE;
     else if (format == GL_SLUMINANCE_ALPHA_EXT)
@@ -282,8 +287,10 @@ unsigned Texture::GetExternalFormat(unsigned format)
 unsigned Texture::GetDataType(unsigned format)
 {
 #ifndef GL_ES_VERSION_2_0
-    if (format == GL_DEPTH24_STENCIL8_EXT)
-        return GL_UNSIGNED_INT_24_8_EXT;
+	if (format == GL_DEPTH24_STENCIL8_EXT)
+		return GL_UNSIGNED_INT_24_8_EXT;
+	else if (format == GL_DEPTH32F_STENCIL8)
+		return GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
     else if (format == GL_RG16 || format == GL_RGBA16)
         return GL_UNSIGNED_SHORT;
     else if (format == GL_RGBA32F_ARB || format == GL_RG32F || format == GL_R32F)

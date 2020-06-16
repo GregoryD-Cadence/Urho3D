@@ -27,6 +27,7 @@
 #include "../Graphics/DebugRenderer.h"
 #include "../Graphics/Drawable.h"
 #include "../Scene/Node.h"
+#include "../Graphics/Graphics.h"
 
 #include "../DebugNew.h"
 
@@ -679,6 +680,8 @@ void Camera::UpdateProjection() const
         projection_.m22_ = q;
         projection_.m23_ = r;
         projection_.m32_ = 1.0f;
+
+		auto mode = Graphics::GetDefaultDepthFormat();
 
 		if (reversedDepth_)
 		{
